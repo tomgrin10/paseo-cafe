@@ -3,6 +3,7 @@ import {
   IconArrowLeft,
   IconBrandGithub,
   IconCheck,
+  IconDownload,
   IconExternalLink,
   IconStar,
   IconVersions,
@@ -16,6 +17,10 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { formatDate, formatDateTime } from "@/lib/format-date"
 import { getInstallCommand } from "@/lib/install-command"
+import {
+  formatInstallCount,
+  getPublishedInstallCount,
+} from "@/lib/install-counts-data"
 import { serializePluginJsonLd } from "@/lib/json-ld"
 import type { PluginHealth } from "@/lib/plugin-schema"
 import { listPlugins } from "@/lib/plugins-data"
@@ -55,6 +60,7 @@ const HEALTH_LABELS: Record<keyof PluginHealth, string> = {
 
 function PluginDetail() {
   const plugin = Route.useLoaderData()
+  const installs = getPublishedInstallCount(plugin.id)
 
   return (
     <div className="flex flex-col gap-8">
@@ -130,6 +136,13 @@ function PluginDetail() {
             <IconStar className="size-4" /> {plugin.repoMeta.stars} stars
           </span>
         ) : null}
+        {installs ? (
+          <span className="flex items-center gap-1">
+            <IconDownload className="size-4" />
+            {formatInstallCount(installs.count)} reported installs via Cafe
+            {installs.stale ? " (stale)" : ""}
+          </span>
+        ) : null}
         {plugin.license ? <span>License: {plugin.license}</span> : null}
         {plugin.author ? <span>By {plugin.author}</span> : null}
         {plugin.repoMeta ? (
@@ -144,6 +157,16 @@ function PluginDetail() {
           <IconBrandGithub className="size-4" /> {plugin.repo}
           <IconExternalLink className="size-3.5" />
         </a>
+        {installs ? (
+          <span className="w-full text-foreground/50 text-xs">
+            Cafe tracking started {formatDateTime(installs.trackingSince)}. This
+            published total includes opt-in reports for new installs received
+            before {formatDate(installs.asOf)}.
+            {installs.stale
+              ? ` Stale snapshot; last fetched ${formatDateTime(installs.fetchedAt)}.`
+              : ""}
+          </span>
+        ) : null}
       </div>
 
       <Alert>

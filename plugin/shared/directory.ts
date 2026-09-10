@@ -66,10 +66,22 @@ const catalogUrlSchema = httpUrlSchema.refine(
 export const directorySettings = defineSettings({
   id: "directory-settings",
   scope: "host",
-  version: 1,
+  version: 2,
   schema: z.object({
     directoryUrl: catalogUrlSchema.default(DEFAULT_DIRECTORY_URL),
+    reportInstalls: z.boolean().default(false),
   }),
+  migrate(values) {
+    const previous = z
+      .object({ directoryUrl: httpUrlSchema.optional() })
+      .safeParse(values)
+    return {
+      directoryUrl:
+        (previous.success ? previous.data.directoryUrl : undefined) ??
+        DEFAULT_DIRECTORY_URL,
+      reportInstalls: false,
+    }
+  },
 })
 
 /**
@@ -199,11 +211,28 @@ export const directoryInstallRpc = defineRpc({
   input: z.object({
     repo: z.string(),
     path: z.string().optional(),
+    catalogUrl: httpUrlSchema.optional(),
   }),
   output: z.object({
     ok: z.boolean(),
     message: z.string(),
+    reportToken: z.uuid().optional(),
   }),
+})
+
+export const directoryCompleteInstallReportRpc = defineRpc({
+  name: "directory.complete-install-report",
+  input: z.object({
+    reportToken: z.uuid(),
+    consent: z.boolean(),
+  }),
+  output: z.object({ scheduled: z.boolean() }),
+})
+
+export const directoryCancelInstallReportsRpc = defineRpc({
+  name: "directory.cancel-install-reports",
+  input: z.object({}),
+  output: z.object({}),
 })
 
 export const directoryUpdateRpc = defineRpc({
@@ -276,6 +305,12 @@ function normalizePluginPath(path: string | undefined): string | undefined {
     .replace(/^\/+/, "")
     .replace(/\/$/, "")
   return normalized || undefined
+}
+
+export function pluginSourceKey(
+  source: Pick<DirectoryEntry, "repo" | "path">
+): string {
+  return `${source.repo.toLowerCase()}\u0000${normalizePluginPath(source.path) ?? ""}`
 }
 
 function pluginPathFromCheckout(path: string): string | undefined {

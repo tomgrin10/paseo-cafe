@@ -107,6 +107,25 @@ describe("catalog URL transport policy", () => {
   })
 })
 
+describe("directory settings", () => {
+  it("defaults reporting off and preserves the catalog URL during migration", async () => {
+    expect(directorySettings.schema.parse({})).toEqual({
+      directoryUrl: "https://paseo.cafe/api/plugins",
+      reportInstalls: false,
+    })
+    const migrated = await Promise.resolve(
+      directorySettings.migrate?.(
+        { directoryUrl: "https://catalog.example/api/plugins" },
+        1
+      )
+    )
+    expect(migrated).toEqual({
+      directoryUrl: "https://catalog.example/api/plugins",
+      reportInstalls: false,
+    })
+  })
+})
+
 describe("directory presentation", () => {
   it("builds an encoded canonical directory URL", () => {
     expect(getSiteUrl({ id: "plugin/name" })).toBe(

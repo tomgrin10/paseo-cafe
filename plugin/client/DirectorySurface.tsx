@@ -7,10 +7,12 @@ import {
   useToast,
 } from "@getpaseo/plugin/client/react-native"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import type { DirectoryEntry, InstalledPlugin } from "../shared/directory"
 import {
+  directoryCancelInstallReportsRpc,
+  directoryCompleteInstallReportRpc,
   directoryInstallRpc,
   directoryListRpc,
   directorySettings,
@@ -206,6 +208,8 @@ function StatusFilterRow({
 export function DirectorySurface({ theme, layout }: PluginSurfaceProps) {
   const listDirectory = useRpc(directoryListRpc)
   const installPlugin = useRpc(directoryInstallRpc)
+  const completeInstallReport = useRpc(directoryCompleteInstallReportRpc)
+  const cancelInstallReports = useRpc(directoryCancelInstallReportsRpc)
   const updatePlugin = useRpc(directoryUpdateRpc)
   const listUpdateStatus = useRpc(directoryUpdateStatusRpc)
   const settings = useSettings(directorySettings)
@@ -230,6 +234,7 @@ export function DirectorySurface({ theme, layout }: PluginSurfaceProps) {
     entryId: string
     message: string
   } | null>(null)
+  const [pendingReportTokens, setPendingReportTokens] = useState<string[]>([])
   const [detailEntry, setDetailEntry] = useState<DirectoryEntry | null>(null)
   const [galleryEntry, setGalleryEntry] = useState<DirectoryEntry | null>(null)
 
@@ -238,6 +243,23 @@ export function DirectorySurface({ theme, layout }: PluginSurfaceProps) {
   // invalid settings document still shows a catalog instead of a blank surface.
   const baseUrl =
     settings.status === "ready" ? settings.values.directoryUrl : undefined
+  const reportInstalls =
+    settings.status === "ready" && settings.values.reportInstalls
+  useEffect(() => {
+    if (!reportInstalls) {
+      void cancelInstallReports({}).catch(() => {})
+    }
+  }, [cancelInstallReports, reportInstalls])
+  useEffect(() => {
+    if (pendingReportTokens.length === 0) return
+    setPendingReportTokens([])
+    for (const reportToken of pendingReportTokens) {
+      void completeInstallReport({
+        reportToken,
+        consent: reportInstalls,
+      }).catch(() => {})
+    }
+  }, [completeInstallReport, pendingReportTokens, reportInstalls])
   const settingsPending = settings.status === "loading"
   const queryKey = [DIRECTORY_QUERY_KEY, baseUrl]
   const updateStatusQueryKey = [UPDATE_STATUS_QUERY_KEY, baseUrl]
@@ -262,10 +284,30 @@ export function DirectorySurface({ theme, layout }: PluginSurfaceProps) {
     mutationFn: (entry: DirectoryEntry) => {
       setInstallingId(entry.id)
       setInstallFailure(null)
-      return installPlugin({ repo: entry.repo, path: entry.path })
+      return installPlugin({
+        repo: entry.repo,
+        path: entry.path,
+        catalogUrl: baseUrl,
+      })
     },
+    // The daemon cannot read plugin settings. It returns an untrusted-to-report
+    // receipt only after a candidate install; refresh the host document after
+    // that install finishes, then complete the receipt with current consent.
     onSuccess: async (result, entry) => {
       if (result.ok) {
+        if (result.reportToken) {
+          const reportToken = result.reportToken
+          void settings
+            .reload()
+            .then(() =>
+              setPendingReportTokens((pending) => [...pending, reportToken])
+            )
+            .catch(() => {
+              void completeInstallReport({ reportToken, consent: false }).catch(
+                () => {}
+              )
+            })
+        }
         setInstallFailure(null)
         toast.show(`Installed ${entry.name}`, { variant: "success" })
         await queryClient.invalidateQueries({ queryKey, exact: true })
