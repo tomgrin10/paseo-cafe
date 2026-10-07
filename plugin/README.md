@@ -10,13 +10,13 @@ on the daemon host behind a confirmation step. A **Paseo plugin** composer attac
 lets you attach a plugin's full listing to a prompt when you want an agent to review it before
 you trust it.
 
-## Install
+## Availability
 
-```bash
-paseo plugin add paseo-cafe/paseo-cafe:plugin
-```
+Use the [Paseo Cafe website](https://paseo.cafe) with the latest Paseo release.
+The companion plugin's published manifest currently excludes current Paseo releases;
+installation instructions will return after its compatibility is updated.
 
-Requires a Paseo 0.8 release; the manifest declares `requirements.paseo` as `^0.8.0`.
+## Catalog configuration
 
 By default the catalog is read from `https://paseo.cafe/api/plugins`. Point **Settings →
 Plugins → Paseo Cafe** at another deployment (a local `bun run dev`, a staging build, or a
@@ -37,3 +37,13 @@ daemon host.
   attachment search with the query alone, and a plugin's server handler cannot read its own
   settings, so a custom Catalog URL applies to the sidebar surface only.
 - Catalog responses are cached on the daemon for five minutes. **Refresh** bypasses that cache.
+
+## More Paseo plugins
+
+Also available from [Tom Gringauz](https://github.com/tomgrin10):
+
+- [Defer](https://github.com/tomgrin10/paseo-defer) — Schedule messages to agents for later delivery.
+- [Graphite](https://github.com/tomgrin10/paseo-graphite) — Monitor Graphite stacks and PR action state.
+- [Smart Session](https://github.com/tomgrin10/paseo-smart-session) — Context-aware compaction and usage insights for long-running agents.
+- [Vitals](https://github.com/tomgrin10/paseo-vitals) — Host, Paseo, agent, and Docker health in one dashboard.
+- [Send to Paseo](https://github.com/tomgrin10/send-to-paseo) — Send GitHub and Graphite PRs to Paseo from Chrome.
