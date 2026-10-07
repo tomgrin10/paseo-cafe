@@ -78,3 +78,13 @@ TanStack Start (file-based routes under `src/routes/`), shadcn/ui (`src/componen
 base-ui-flavored — polymorphism uses `render`, not `asChild`), Tailwind v4, Zod for both the
 registry schema (`src/lib/registry-schema.ts`) and the generated plugin schema
 (`src/lib/plugin-schema.ts`).
+
+## More Paseo plugins
+
+Also available from [Tom Gringauz](https://github.com/tomgrin10):
+
+- [Defer](https://github.com/tomgrin10/paseo-defer) — Schedule messages to agents for later delivery.
+- [Graphite](https://github.com/tomgrin10/paseo-graphite) — Monitor Graphite stacks and PR action state.
+- [Smart Session](https://github.com/tomgrin10/paseo-smart-session) — Context-aware compaction and usage insights for long-running agents.
+- [Vitals](https://github.com/tomgrin10/paseo-vitals) — Host, Paseo, agent, and Docker health in one dashboard.
+- [Send to Paseo](https://github.com/tomgrin10/send-to-paseo) — Send GitHub and Graphite PRs to Paseo from Chrome.
